@@ -1,0 +1,64 @@
+    mov ax,bx                                
+    mov [address],ax                         ;address has got the address
+   
+    mov bx,ds
+    mov es,bx                                ;change the es=ds in order to write    
+
+    mov ax,cx
+    mov [hlba],ax                            ;hlba get the 16-28 1 word
+    
+    mov edx,0 
+    mov eax,0
+    add ax,[hlba]
+    shl eax,16    
+    add eax,[llba]    ;now the eax get the 0~28bit LBA4
+    mov ebx,1134
+    idiv ebx     ;1134=18*63 now the C is stored in eax
+    cstore dw 0
+    mov byte[cstore],al 
+    
+    mov edx,0
+    mov eax,0
+    mov eax,[hlba]
+    shl eax,16
+    add eax,[llba]
+    mov ebx,63
+    idiv ebx      ;now the result was stored in eax: LBA/PS
+    mov edx,0
+    mov ebx,18
+    idiv ebx      ;now the answer was stored in edx: (LBA/PS)%PH
+    hstore dw 0
+    mov al,dl
+    mov byte[hstore],al
+    
+    mov edx,0
+    mov eax,0
+    add eax,[hlba]
+    shl eax,16
+    add eax,[llba]
+    mov ebx,63
+    idiv ebx      ;now the result was stored in edx: LBA%ps
+    add edx,1
+    sstore dw 0
+    mov al,dl
+    mov byte[sstore],al
+                                      ; some bug
+    ;sstore db 0                      ;these are wrong ,i am finding the cause
+    ;mov al,dl
+    ;mov ah,0
+    ;mov [sstore],ax
+
+    mov ch,byte[cstore]              ;c
+    mov dh,byte[hstore]              ;h
+    mov cl,byte[sstore]              ;s
+    mov bx,[address]
+    mov al,1      ;s number
+    mov ah,02h    ;function number
+    mov dl,80h    ;driver number
+    int 13h       ;es:bx 
+    popad
+    add bx,512
+    ret
+
+times 510 - ($ - $$) db 0
+db 0x55, 0xaa
